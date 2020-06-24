@@ -25,12 +25,12 @@ logger = logging.getLogger(__name__)
 
 class ModelConfig:
     def __init__(self, \
-            bert_config = 'models/base/bert_config.json', \
-            model_path = 'models/base/pytorch_model.bin', \
-            vocab_file = 'models/base/vocab.txt', \
+            bert_config = 'model/bert_config.json', \
+            model_path = 'model/pytorch_model.bin', \
+            vocab_file = 'model/vocab.txt', \
             data_dir = 'data', \
             output_dir = 'out', \
-            epoch = 2, \
+            epoch = 10, \
             learning_rate = 2e-5, \
             batch_size = 8):
 
@@ -43,7 +43,7 @@ class ModelConfig:
         self.max_seq_length = 512
 
         self.batch_size = batch_size
-        self.use_gpu = 1
+        self.num_gpu = 1
         self.epoch = epoch
         self.learning_rate = learning_rate
         
@@ -54,7 +54,7 @@ class ModelConfig:
         self.warmup_steps = 0
         self.max_grad_norm = 1.0
 
-        self.device = 'cuda' if self.use_gpu else 'cpu'
+        self.device = 'cuda:{}'.format(self.num_gpu) if self.num_gpu > -1 else 'cpu'
 
 
 class BertModelForClassification(BertPreTrainedModel):
@@ -117,14 +117,15 @@ class ClassificationProcessor(DataProcessor):
         examples = []
         for (i, line) in enumerate(lines):
             guid = "%s-%s" % ("train", i)
-            text_a = line[0]
-            text_b = None
+            text_a = line[3]
+            text_b = line[4]
             
             label = line[1]
             labels.add(label)
-            pickle.dump(list(labels), open(os.path.join(data_dir, 'labels.pickle'), 'wb'))
             
             examples.append(InputExample(guid=guid, text_a=text_a, text_b=text_b, label=label))
+
+        pickle.dump(sorted(list(labels)), open(os.path.join(data_dir, 'labels.pickle'), 'wb'))
         return examples
 
     def get_test_examples(self, data_dir):
@@ -133,8 +134,8 @@ class ClassificationProcessor(DataProcessor):
         examples = []
         for (i, line) in enumerate(lines):
             guid = "%s-%s" % ("test", i)
-            text_a = line[0]
-            text_b = None
+            text_a = line[3]
+            text_b = line[4]
             
             label = line[1]
             
@@ -150,7 +151,7 @@ def set_seed(config):
     random.seed(config.seed)
     np.random.seed(config.seed)
     torch.manual_seed(config.seed)
-    if config.use_gpu > 0:
+    if config.num_gpu > -1:
         torch.cuda.manual_seed_all(config.seed)
 
 
@@ -294,10 +295,10 @@ def evaluate(config, model, tokenizer, prefix=""):
 
 if __name__ == '__main__':
     
-    model_config = ModelConfig(epoch=1, learning_rate=2e-5, batch_size=2)
+    model_config = ModelConfig(epoch=2, learning_rate=2e-5, batch_size=4)
 
     bert_config = BertConfig.from_json_file(model_config.bert_config)
-    tokenizer = BertTokenizer(model_config.vocab_file, do_lower_case=True)
+    tokenizer = BertTokenizer(model_config.vocab_file, do_lower_case=False)
     model = BertModelForClassification.from_pretrained(model_config.model_path, config=bert_config, num_labels=5)
     model.to(model_config.device)
 
