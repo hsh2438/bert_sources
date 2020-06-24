@@ -25,9 +25,9 @@ logger = logging.getLogger(__name__)
 
 class ModelConfig:
     def __init__(self, \
-            bert_config = 'model/bert_config.json', \
-            model_path = 'model/pytorch_model.bin', \
-            vocab_file = 'model/vocab.txt', \
+            bert_config = 'bert_multilingual_model/bert_config.json', \
+            model_path = 'bert_multilingual_model/pytorch_model.bin', \
+            vocab_file = 'bert_multilingual_model/vocab.txt', \
             data_dir = 'data', \
             output_dir = 'out', \
             epoch = 10, \
