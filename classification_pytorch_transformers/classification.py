@@ -25,9 +25,9 @@ logger = logging.getLogger(__name__)
 
 class ModelConfig:
     def __init__(self, \
-            bert_config = 'bert_multilingual_model/bert_config.json', \
-            model_path = 'bert_multilingual_model/pytorch_model.bin', \
-            vocab_file = 'bert_multilingual_model/vocab.txt', \
+            bert_config = 'model/bert_config.json', \
+            model_path = 'model/pytorch_model.bin', \
+            vocab_file = 'model/vocab.txt', \
             data_dir = 'data', \
             output_dir = 'out', \
             epoch = 10, \
@@ -253,14 +253,14 @@ def train(config, model, tokenizer):
     return global_step, tr_loss / global_step
 
 
-def evaluate(config, model, tokenizer, prefix=""):
+def evaluate(config, model, tokenizer):
 
     eval_dataset = load_and_cache_examples(config, tokenizer, evaluate=True)
     eval_sampler = SequentialSampler(eval_dataset)
     eval_dataloader = DataLoader(eval_dataset, sampler=eval_sampler, batch_size=config.batch_size)
 
     # Eval!
-    logger.info("***** Running evaluation {} *****".format(prefix))
+    logger.info("***** Running evaluation *****")
     logger.info("  Num examples = %d", len(eval_dataset))
     logger.info("  Batch size = %d", config.batch_size)
     eval_loss = 0.0
@@ -293,16 +293,40 @@ def evaluate(config, model, tokenizer, prefix=""):
     return result
 
 
+def predict(config, model, tokenizer, features):
+
+    all_input_ids = torch.tensor([f.input_ids for f in features], dtype=torch.long)
+    all_attention_mask = torch.tensor([f.attention_mask for f in features], dtype=torch.long)
+    all_token_type_ids = torch.tensor([f.token_type_ids for f in features], dtype=torch.long)
+    all_labels = torch.tensor([f.label for f in features], dtype=torch.long)
+
+    dataset = TensorDataset(all_input_ids, all_attention_mask, all_token_type_ids, all_labels)
+
+    with torch.no_grad():
+        inputs = {"input_ids": torch.reshape(dataset[0][0], (-1, config.max_seq_length)), \
+                    "attention_mask": torch.reshape(dataset[0][1], (-1, config.max_seq_length)),\
+                    "token_type_ids": torch.reshape(dataset[0][2], (-1, config.max_seq_length)), \
+                    "labels": torch.reshape(dataset[0][3], (-1, 1))}
+        for k, v in inputs.items():
+            inputs[k] = v.to(config.device)
+        outputs = model(**inputs)
+        _, logits = outputs[:2]
+
+    preds = torch.nn.functional.softmax(logits) 
+    return preds.cpu().numpy()
+
+
 if __name__ == '__main__':
     
     model_config = ModelConfig(epoch=2, learning_rate=2e-5, batch_size=4)
 
     bert_config = BertConfig.from_json_file(model_config.bert_config)
     tokenizer = BertTokenizer(model_config.vocab_file, do_lower_case=False)
-    model = BertModelForClassification.from_pretrained(model_config.model_path, config=bert_config, num_labels=5)
+    model = BertModelForClassification.from_pretrained(model_config.model_path, config=bert_config, num_labels=3)
     model.to(model_config.device)
 
     global_step, tr_loss = train(model_config, model, tokenizer)
 
     eval_result = evaluate(model_config, model, tokenizer)
     print('eval_result: ', eval_result)
+
