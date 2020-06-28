@@ -1,9 +1,9 @@
 # bert based text classification with pytorch and transformers
-<br>
+
 ## classification korean news sample
 data: crawled 500 korean news
 base model: bert multi-lingual model <br>
-https://drive.google.com/drive/folders/1aX8uxS8KwFspHjRYjSrE14bOhKSqU93z?usp=sharing
+https://drive.google.com/drive/folders/1aX8uxS8KwFspHjRYjSrE14bOhKSqU93z?usp=sharing <br>
 
 ## make docker image
 docker build . -t bert_classification <br>
