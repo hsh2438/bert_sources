@@ -1,0 +1,9 @@
+FROM pytorch/pytorch:1.4-cuda10.1-cudnn7-devel
+
+MAINTAINER shhwang@saltlux.com
+
+COPY . /workspace
+
+WORKDIR /workspace
+
+RUN pip install -r requirements.txt
