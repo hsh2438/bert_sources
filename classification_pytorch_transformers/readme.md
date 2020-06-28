@@ -1,18 +1,22 @@
-# bert based text classification with pytorch and transformers
+# bert based text classification
+bert based text classification example <br>
 
-## classification korean news sample
-data: crawled 500 korean news
+## Information
+data: crawled 500 korean news <br>
 base model: bert multi-lingual model <br>
 https://drive.google.com/drive/folders/1aX8uxS8KwFspHjRYjSrE14bOhKSqU93z?usp=sharing <br>
 
-## make docker image
+## Make docker image
 docker build . -t bert_classification <br>
 
-## docker container start
+## Docker container start
 docker run -it -p 11122:11122 --name classification bert_classification <br>
 
-## train and evaluation
+## Train and Evaluation
 python classification.py <br>
 
-## start flask server
+## Start flask server with swagger
 python server.py <br>
+
+## Test
+http://host:11122
